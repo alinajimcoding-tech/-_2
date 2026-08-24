@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابة التاجر المعتمد | نقاط البيع POS</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #060911;
+            --surface: #0e1526;
+            --surface-card: #151f38;
+            --border: #1f2e4d;
+            --text-main: #f8fafc;
+            --text-sub: #94a3b8;
+            --primary: #2563eb;
+            --emerald: #10b981;
+            --rose: #f43f5e;
+            --amber: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; }
+        body { background: var(--bg); color: var(--text-main); line-height: 1.5; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+        .hidden { display: none !important; }
+
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .box { max-width: 480px; margin: 20px auto; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        
+        .hero-banner { text-align: center; max-width: 800px; margin: 30px auto; padding: 20px; }
+        .hero-banner h1 { font-size: 28px; font-weight: 900; margin-bottom: 10px; }
+        .hero-banner p { font-size: 14px; color: var(--text-sub); margin-bottom: 24px; }
+
+        .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 30px; text-align: start; }
+        .feature-item { background: var(--surface); border: 1px solid var(--border); padding: 16px; border-radius: 12px; }
+        .feature-item h4 { font-size: 14px; margin-bottom: 6px; color: var(--primary); font-weight: 800; }
+        .feature-item p { font-size: 12px; color: var(--text-sub); }
+
+        .input-group { margin-bottom: 12px; text-align: start; }
+        .input-group label { display: block; font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 4px; }
+        .input-ctrl { width: 100%; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 9px; color: var(--text-main); font-size: 13px; outline: none; }
+        .input-ctrl:focus { border-color: var(--primary); }
+        
+        .btn { width: 100%; padding: 11px; border-radius: 9px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; text-align: center; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-emerald { background: var(--emerald); color: #fff; }
+        .btn-secondary { background: var(--surface-card); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-rose { background: rgba(244,63,94,0.15); color: var(--rose); border: 1px solid var(--rose); padding: 4px 8px; font-size: 11px; border-radius: 6px; cursor: pointer; }
+
+        .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .kpi-cell { background: var(--surface-card); padding: 14px; border-radius: 12px; text-align: center; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 15px; }
+        th, td { padding: 10px; text-align: start; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-sub); background: var(--surface-card); font-weight: 700; }
+
+        .fee-calc-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 12px; font-size: 11px; }
+        .fee-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .receipt-card { background: #ffffff; color: #0f172a; width: 340px; border-radius: 14px; padding: 24px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .receipt-line { border-bottom: 1px dashed #cbd5e1; margin: 12px 0; }
+        .receipt-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+
+        .toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: var(--surface); color: var(--text-main); border: 1px solid var(--border); padding: 12px 20px; border-radius: 10px; font-size: 13px; font-weight: 700; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .toast.success { border-color: var(--emerald); color: var(--emerald); }
+        .toast.error { border-color: var(--rose); color: var(--rose); }
+    </style>
+</head>
+<body>
+
+    <div class="navbar">
+        <div style="font-weight: 900; font-size: 15px;">منظومة المقاصة ونقاط البيع | بوابة التاجر المعتمد</div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <div id="store-badge" class="hidden" style="background: var(--surface-card); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); color: var(--primary);"></div>
+            <button id="btn-z-report" class="btn-secondary hidden" style="padding: 5px 12px; font-size: 11px; border-radius: 8px; cursor: pointer;" onclick="openZReport()">تقرير الإغلاق Z-Report</button>
+        </div>
+    </div>
+
+    <!-- واجهة البداية للتاجر -->
+    <div id="merchant-landing">
+        <div class="hero-banner">
+            <h1>منصة الربط التجاري ونقاط البيع</h1>
+            <p>انضم لشبكة المتاجر المعتمدة لدى اتحاد الغرف التجارية، واستقبل مشتريات الموظفين عبر الـ QR Code مع تسوية بنكية منتظمة.</p>
+            
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <h4>تسوية مصرفية مباشرة</h4>
+                    <p>تحويل مستحقات المبيعات للمصرف مع مقاصة دقيقة بنسبة عمولة 3% فقط.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>أمان ومطابقة بيومترية</h4>
+                    <p>فحص هوية الموظف وصورته والرمز الديناميكي لمنع أي احتيال.</p>
+                </div>
+                <div class="feature-item">
+                    <h4>زيادة القوة الشرائية</h4>
+                    <p>استقطاب موظفي الدولة بفضل السقف الائتماني المتاح للشراء الفوري.</p>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; max-width: 400px; margin: 0 auto;">
+                <button class="btn btn-primary" onclick="showMerchantSection('login')">تسجيل الدخول</button>
+                <button class="btn btn-secondary" onclick="showMerchantSection('register')">تسجيل تاجر جديد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- تسجيل الدخول -->
+    <div id="merchant-login-box" class="box hidden">
+        <h2 style="font-size: 18px; margin-bottom: 6px; text-align: center;">تسجيل دخول نقطة البيع</h2>
+        <p style="font-size: 12px; color: var(--text-sub); text-align: center; margin-bottom: 18px;">أدخل اسم المنشأة وكلمة المرور لبدء الجلسة</p>
+
+        <div class="input-group">
+            <label>اسم السوبرماركت / المنشأة:</label>
+            <input type="text" id="login-store-name" class="input-ctrl" placeholder="اسم السوبرماركت">
+        </div>
+        <div class="input-group">
+            <label>كلمة المرور:</label>
+            <input type="password" id="login-store-pass" class="input-ctrl" placeholder="كلمة المرور">
+        </div>
+
+        <button class="btn btn-primary" onclick="handleMerchantLogin()">دخول وبدء جلسة البيع</button>
+        <button class="btn btn-secondary" onclick="showMerchantSection('landing')" style="margin-top: 8px;">رجوع</button>
+    </div>
+
+    <!-- إنشاء حساب تاجر -->
+    <div id="merchant-reg-box" class="box hidden">
+        <h2 style="font-size: 18px; margin-bottom: 6px; text-align: center;">تسجيل منشأة تجارية جديدة</h2>
+        <p style="font-size: 12px; color: var(--text-sub); text-align: center; margin-bottom: 18px;">تسجيل البيانات الرسمية لاعتماد المتجر بنقاط البيع</p>
+
+        <div class="input-group">
+            <label>اسم السوبرماركت / المنشأة:</label>
+            <input type="text" id="reg-store-name" class="input-ctrl" placeholder="الاسم التجاري">
+        </div>
+        <div class="input-group">
+            <label>رقم هاتف المنشأة / الإدارة:</label>
+            <input type="text" id="reg-store-phone" class="input-ctrl" placeholder="07XXXXXXXXX">
+        </div>
+        <div class="input-group">
+            <label>عنوان المنشأة بالتفصيل:</label>
+            <input type="text" id="reg-store-addr" class="input-ctrl" placeholder="المحافظة - المنطقة - الشارع">
+        </div>
+        <div class="input-group">
+            <label>المنتجات والخدمات المقدمة:</label>
+            <input type="text" id="reg-store-products" class="input-ctrl" placeholder="مواد غذائية، أجهزة منزلية، ملابس...">
+        </div>
+        <div class="input-group">
+            <label>كلمة المرور للحساب:</label>
+            <input type="password" id="reg-store-pass" class="input-ctrl" placeholder="كلمة المرور">
+        </div>
+
+        <button class="btn btn-emerald" onclick="handleMerchantRegister()">إنشاء حساب التاجر</button>
+        <button class="btn btn-secondary" onclick="showMerchantSection('landing')" style="margin-top: 8px;">رجوع</button>
+    </div>
+
+    <!-- لوحة تحكم الكاشير -->
+    <div id="merchant-dash" class="hidden" style="max-width: 900px; margin: 0 auto; width: 100%;">
+        <div class="kpi-row">
+            <div class="kpi-cell">
+                <span style="font-size: 11px; color: var(--text-sub); display: block;">مبيعات الجلسة الحالية</span>
+                <b id="session-sales-total" style="color: var(--emerald); font-size: 18px;">0 د.ع</b>
+            </div>
+            <div class="kpi-cell">
+                <span style="font-size: 11px; color: var(--text-sub); display: block;">عدد العمليات المنفذة</span>
+                <b id="session-sales-count" style="font-size: 18px;">0</b>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="box" style="margin: 0;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">ماسح كود الزبون (QR)</h3>
+                <div id="pos-reader" style="border-radius: 10px; overflow: hidden; margin-bottom: 12px;"></div>
+                <button class="btn btn-secondary" onclick="restartScanner()">إعادة تشغيل الماسح</button>
+
+                <div id="pos-user-area" class="hidden" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 12px;">
+                    <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                        <img id="pos-emp-pic" src="" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--emerald);">
+                        <div style="text-align: start;">
+                            <h4 id="pos-emp-name" style="font-size: 13px; font-weight: 800;">-</h4>
+                            <span id="pos-emp-id" style="font-size: 11px; color: var(--text-sub);">-</span>
+                        </div>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
+                        <span style="font-size: 11px; color: var(--emerald);">الرصيد المتاح: </span>
+                        <b id="pos-emp-bal" style="color: var(--emerald); font-size: 15px;">-</b>
+                    </div>
+
+                    <div class="input-group">
+                        <label>مبلغ الفاتورة (د.ع):</label>
+                        <input type="number" id="pos-bill" class="input-ctrl" placeholder="المبلغ" oninput="calculateLiveFee()">
+                    </div>
+
+                    <div class="fee-calc-box">
+                        <div class="fee-row"><span>عمولة الاتحاد (3%):</span><b id="fee-union" style="color:var(--rose);">0 د.ع</b></div>
+                        <div class="fee-row"><span>صافي مستحق المحل (97%):</span><b id="fee-net" style="color:var(--emerald);">0 د.ع</b></div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>رمز الأمان اللحظي الظاهر على هاتف الزبون (OTP):</label>
+                        <input type="number" id="pos-otp" class="input-ctrl" placeholder="3 أرقام">
+                    </div>
+
+                    <div class="input-group">
+                        <label>رمز PIN السري للموظف:</label>
+                        <input type="password" id="pos-pin" maxlength="4" class="input-ctrl" placeholder="****">
+                    </div>
+                    <button class="btn btn-emerald" id="btn-exec-trans" onclick="executeTransaction()">تأكيد وخصم الفاتورة</button>
+                </div>
+            </div>
+
+            <div class="box" style="margin: 0;">
+                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">سجل فواتير المنشأة</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>الموظف</th>
+                            <th>المبلغ</th>
+                            <th>الإجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="merchant-tx-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الوصل الإلكتروني -->
+    <div id="receipt-modal" class="modal-overlay hidden">
+        <div class="receipt-card">
+            <div style="font-size: 13px; font-weight: 900; margin-bottom: 2px;">اتحاد الغرف التجارية العراقية</div>
+            <div style="font-size: 10px; color: #64748b;">إشعار تسوية وخصم إلكتروني معتمد</div>
+            <div class="receipt-line"></div>
+            
+            <div class="receipt-row"><span>رقم المعاملة:</span><b id="rcpt-id">-</b></div>
+            <div class="receipt-row"><span>المنشأة:</span><b id="rcpt-store">-</b></div>
+            <div class="receipt-row"><span>الموظف:</span><b id="rcpt-emp">-</b></div>
+            <div class="receipt-row"><span>التاريخ:</span><b id="rcpt-date">-</b></div>
+            
+            <div class="receipt-line"></div>
+            <div class="receipt-row" style="font-size: 14px; font-weight: 900; color: #047857;">
+                <span>المبلغ الإجمالي:</span>
+                <span id="rcpt-amount">-</span>
+            </div>
+            <div class="receipt-line"></div>
+            
+            <div style="font-size: 9px; color: #64748b; margin-bottom: 12px;">تم اعتماد الخصم ومزامنته مع نظام المقاصة المركزية</div>
+            <button class="btn btn-primary" onclick="closeReceipt()">إتمام وطباعة</button>
+        </div>
+    </div>
+
+    <!-- نافذة تقرير الإغلاق اليومي Z-Report -->
+    <div id="z-report-modal" class="modal-overlay hidden">
+        <div class="receipt-card" style="width: 380px;">
+            <div style="font-size: 14px; font-weight: 900;">تقرير الإغلاق اليومي (Z-Report)</div>
+            <div style="font-size: 10px; color: #64748b;" id="z-store-title">-</div>
+            <div class="receipt-line"></div>
+            
+            <div class="receipt-row"><span>إجمالي عدد العمليات:</span><b id="z-count">0</b></div>
+            <div class="receipt-row"><span>إجمالي المبيعات:</span><b id="z-gross">0 د.ع</b></div>
+            <div class="receipt-row"><span>إجمالي استقطاع الاتحاد (3%):</span><b id="z-fee" style="color:#e11d48;">0 د.ع</b></div>
+            
+            <div class="receipt-line"></div>
+            <div class="receipt-row" style="font-size: 14px; font-weight: 900; color: #047857;">
+                <span>الصافي الجاهز للتحويل البنكي:</span>
+                <span id="z-net">0 د.ع</span>
+            </div>
+            <div class="receipt-line"></div>
+            
+            <button class="btn btn-primary" onclick="window.print()">طباعة التقرير</button>
+            <button class="btn btn-secondary" onclick="closeZReport()" style="margin-top: 8px;">إغلاق</button>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-box"></div>
+
+    <script>
+        const SUPABASE_URL = "https://fttknbkhepebbavczwgb.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_ICutFiPEaHnXqyGXwjdkZg_QzjIbA0Z";
+
+        let supabaseClient = null;
+        function getSupabase() {
+            if (supabaseClient) return supabaseClient;
+            try {
+                if (window.supabase && typeof window.supabase.createClient === 'function') {
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            } catch(e) {
+                console.warn("Supabase initialization error:", e);
+            }
+            return supabaseClient;
+        }
+
+        let curStore = null;
+        let posScanner = null;
+        let activeEmp = null;
+
+        function playTone(freq, type = 'sine', duration = 0.15) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = type;
+                osc.frequency.value = freq;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration);
+                osc.stop(ctx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function showToast(msg, type = "info") {
+            const box = document.getElementById('toast-box');
+            if (!box) return;
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerText = msg;
+            box.appendChild(el);
+            setTimeout(() => { el.remove(); }, 3500);
+        }
+
+        function showMerchantSection(sec) {
+            const sections = ['merchant-landing', 'merchant-login-box', 'merchant-reg-box', 'merchant-dash'];
+            sections.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            if (sec === 'landing') document.getElementById('merchant-landing').classList.remove('hidden');
+            if (sec === 'login') document.getElementById('merchant-login-box').classList.remove('hidden');
+            if (sec === 'register') document.getElementById('merchant-reg-box').classList.remove('hidden');
+            if (sec === 'dash') document.getElementById('merchant-dash').classList.remove('hidden');
+        }
+
+        function calculateLiveFee() {
+            const bill = parseFloat(document.getElementById('pos-bill').value) || 0;
+            const fee = bill * 0.03;
+            const net = bill * 0.97;
+            document.getElementById('fee-union').innerText = `${fee.toLocaleString()} د.ع`;
+            document.getElementById('fee-net').innerText = `${net.toLocaleString()} د.ع`;
+        }
+
+        async function handleMerchantRegister() {
+            const name = document.getElementById('reg-store-name').value.trim();
+            const phone = document.getElementById('reg-store-phone').value.trim();
+            const addr = document.getElementById('reg-store-addr').value.trim();
+            const prods = document.getElementById('reg-store-products').value.trim();
+            const pass = document.getElementById('reg-store-pass').value.trim();
+
+            if (!name || !pass) {
+                showToast("يرجى كتابة اسم المنشأة وكلمة المرور", "error");
+                return;
+            }
+
+            const sb = getSupabase();
+            try {
+                if (sb) {
+                    const { data: existing } = await sb.from('stores').select('id').eq('name', name).maybeSingle();
+                    if (existing) {
+                        showToast("اسم المنشأة مسجل مسبقاً", "error");
+                        return;
+                    }
+
+                    const { error } = await sb.from('stores').insert([{
+                        name: name,
+                        phone: phone,
+                        address: addr,
+                        products: prods,
+                        password: pass
+                    }]);
+
+                    if (error) throw error;
+                }
+
+                showToast("تم تسجيل منشأتك بنجاح، تفضل بالدخول", "success");
+                showMerchantSection('login');
+            } catch(e) {
+                showToast(`خطأ: ${e.message}`, "error");
+            }
+        }
+
+        async function handleMerchantLogin() {
+            const name = document.getElementById('login-store-name').value.trim();
+            const pass = document.getElementById('login-store-pass').value.trim();
+
+            if (!name || !pass) {
+                showToast("أدخل اسم المنشأة وكلمة المرور", "error");
+                return;
+            }
+
+            const sb = getSupabase();
+            try {
+                if (sb) {
+                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', pass).maybeSingle();
+                    if (error || !store) {
+                        showToast("اسم المنشأة أو كلمة المرور غير صحيحة", "error");
+                        return;
+                    }
+                    curStore = store;
+                } else {
+                    curStore = { name, pass };
+                }
+
+                document.getElementById('store-badge').innerText = `منشأة معتمدة: ${curStore.name}`;
+                document.getElementById('store-badge').classList.remove('hidden');
+                document.getElementById('btn-z-report').classList.remove('hidden');
+                showMerchantSection('dash');
+                startScanner();
+                renderTxTable();
+                showToast(`جلسة بيع نشطة: ${curStore.name}`, "success");
+            } catch(e) {
+                showToast("فشل تسجيل الدخول", "error");
+            }
+        }
+
+        function startScanner() {
+            if (posScanner) { try { posScanner.clear(); } catch(e){} }
+            posScanner = new Html5QrcodeScanner("pos-reader", { fps: 10, qrbox: { width: 200, height: 200 } });
+            posScanner.render(async (decodedText) => {
+                try {
+                    let parsed;
+                    try { parsed = JSON.parse(decodeURIComponent(decodedText)); } catch(e) { parsed = JSON.parse(decodedText); }
+                    
+                    const sb = getSupabase();
+                    let emp = null;
+                    if (sb) {
+                        const { data } = await sb.from('requests').select('*').eq('id', parsed.id).single();
+                        emp = data;
+                    }
+
+                    if (!emp || emp.status !== 'approved') { 
+                        playTone(200, 'sawtooth', 0.3);
+                        showToast("البطاقة غير معتمدة من قبل إدارة الاتحاد", "error");
+                        return; 
+                    }
+                    if (emp.is_frozen) { 
+                        playTone(200, 'sawtooth', 0.3);
+                        showToast("حساب هذا الموظف مجمد حالياً من قبل الإدارة", "error");
+                        return; 
+                    }
+
+                    playTone(880, 'sine', 0.15);
+                    activeEmp = emp;
+                    document.getElementById('pos-user-area').classList.remove('hidden');
+                    document.getElementById('pos-emp-name').innerText = emp.name;
+                    document.getElementById('pos-emp-id').innerText = `${emp.id} | ${emp.dept}`;
+                    document.getElementById('pos-emp-bal').innerText = `${(parseFloat(emp.balance) || 0).toLocaleString()} د.ع`;
+                    
+                    document.getElementById('pos-emp-pic').src = emp.kyc_photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
+                    showToast("تمت مطابقة بطاقة الموظف بنجاح", "success");
+                } catch(e) {
+                    showToast("رمز QR غير مطابق", "error");
+                }
+            });
+        }
+
+        function restartScanner() {
+            document.getElementById('pos-user-area').classList.add('hidden');
+            startScanner();
+        }
+
+        async function executeTransaction() {
+            const bill = parseFloat(document.getElementById('pos-bill').value);
+            const pin = document.getElementById('pos-pin').value.trim();
+            const enteredOtp = document.getElementById('pos-otp').value.trim();
+            const btn = document.getElementById('btn-exec-trans');
+
+            if (!bill || bill <= 0) { showToast("يرجى إدخال مبلغ صحيح", "error"); return; }
+
+            const sb = getSupabase();
+            try {
+                btn.disabled = true;
+                btn.innerText = "جاري تنفيذ العملية...";
+
+                let emp = null;
+                if (sb) {
+                    const { data } = await sb.from('requests').select('*').eq('id', activeEmp.id).single();
+                    emp = data;
+                } else {
+                    emp = activeEmp;
+                }
+
+                if (!emp || emp.status !== 'approved' || emp.is_frozen) {
+                    showToast("البطاقة غير صالحة أو مجمدة", "error");
+                    return;
+                }
+
+                if (emp.current_otp && String(enteredOtp) !== String(emp.current_otp)) {
+                    playTone(180, 'sawtooth', 0.3);
+                    showToast("رمز الأمان اللحظي (OTP) غير مطابق!", "error");
+                    return;
+                }
+
+                if (pin !== String(emp.pin)) { 
+                    playTone(180, 'sawtooth', 0.3);
+                    showToast("رمز PIN السري غير مطابق", "error"); 
+                    return; 
+                }
+
+                const currentBal = parseFloat(emp.balance) || 0;
+                if (bill > currentBal) { 
+                    showToast("رصيد الموظف المتبقي لا يكفي", "error"); 
+                    return; 
+                }
+
+                const newBalance = currentBal - bill;
+                const txCode = "TX-" + Date.now().toString().slice(-6);
+                const dateStr = new Date().toLocaleString('ar-EG');
+
+                if (sb) {
+                    const { error: updErr } = await sb.from('requests').update({ balance: newBalance }).eq('id', emp.id);
+                    if (updErr) throw updErr;
+
+                    const { error: txErr } = await sb.from('transactions').insert([{
+                        tx_code: txCode,
+                        request_id: emp.id,
+                        emp_name: emp.name,
+                        store_name: curStore.name,
+                        amount: bill,
+                        is_refunded: false
+                    }]);
+                    if (txErr) throw txErr;
+                }
+
+                playTone(587.33, 'triangle', 0.1);
+                setTimeout(() => playTone(880, 'sine', 0.2), 120);
+
+                document.getElementById('rcpt-id').innerText = txCode;
+                document.getElementById('rcpt-store').innerText = curStore.name;
+                document.getElementById('rcpt-emp').innerText = emp.name;
+                document.getElementById('rcpt-date').innerText = dateStr;
+                document.getElementById('rcpt-amount').innerText = `${bill.toLocaleString()} د.ع`;
+                document.getElementById('receipt-modal').classList.remove('hidden');
+
+                document.getElementById('pos-bill').value = '';
+                document.getElementById('pos-pin').value = '';
+                document.getElementById('pos-otp').value = '';
+                document.getElementById('fee-union').innerText = "0 د.ع";
+                document.getElementById('fee-net').innerText = "0 د.ع";
+                document.getElementById('pos-user-area').classList.add('hidden');
+                
+                renderTxTable();
+                startScanner();
+            } catch(e) {
+                showToast(`فشلت العملية: ${e.message}`, "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "تأكيد وخصم الفاتورة";
+            }
+        }
+
+        async function refundTransaction(txCode) {
+            if (!confirm("هل تريد بالتأكيد إلغاء العملية واسترجاع الرصيد للموظف؟")) return;
+
+            const sb = getSupabase();
+            try {
+                if (sb) {
+                    const { data: tx } = await sb.from('transactions').select('*').eq('tx_code', txCode).single();
+                    if (!tx || tx.is_refunded) return;
+
+                    const { data: emp } = await sb.from('requests').select('balance').eq('id', tx.request_id).single();
+                    if (emp) {
+                        const restoredBalance = (parseFloat(emp.balance) || 0) + parseFloat(tx.amount);
+                        await sb.from('requests').update({ balance: restoredBalance }).eq('id', tx.request_id);
+                    }
+
+                    await sb.from('transactions').update({ is_refunded: true }).eq('tx_code', txCode);
+                }
+
+                showToast("تم إلغاء الفاتورة واسترجاع الرصيد للموظف بنجاح", "success");
+                renderTxTable();
+            } catch(e) {
+                showToast(`تعذر الإلغاء: ${e.message}`, "error");
+            }
+        }
+
+        function closeReceipt() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+            showToast("تم توثيق الفاتورة بالمقاصة بنجاح", "success");
+        }
+
+        async function openZReport() {
+            const sb = getSupabase();
+            let myActiveTxs = [];
+            if (sb && curStore) {
+                const { data } = await sb.from('transactions').select('*').eq('store_name', curStore.name).eq('is_refunded', false);
+                if (data) myActiveTxs = data;
+            }
+
+            let totalGross = myActiveTxs.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0);
+            let totalFee = totalGross * 0.03;
+            let totalNet = totalGross * 0.97;
+
+            document.getElementById('z-store-title').innerText = `${curStore ? curStore.name : ''} | ${new Date().toLocaleDateString('ar-EG')}`;
+            document.getElementById('z-count').innerText = myActiveTxs.length;
+            document.getElementById('z-gross').innerText = `${totalGross.toLocaleString()} د.ع`;
+            document.getElementById('z-fee').innerText = `${totalFee.toLocaleString()} د.ع`;
+            document.getElementById('z-net').innerText = `${totalNet.toLocaleString()} د.ع`;
+
+            document.getElementById('z-report-modal').classList.remove('hidden');
+        }
+
+        function closeZReport() {
+            document.getElementById('z-report-modal').classList.add('hidden');
+        }
+
+        async function renderTxTable() {
+            const tbody = document.getElementById('merchant-tx-table');
+            if (!tbody) return;
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-sub);">جاري جلب الفواتير...</td></tr>`;
+
+            const sb = getSupabase();
+            try {
+                let myTxs = [];
+                if (sb && curStore) {
+                    const { data } = await sb.from('transactions').select('*').eq('store_name', curStore.name).order('created_at', { ascending: false });
+                    if (data) myTxs = data;
+                }
+
+                let activeTxs = myTxs.filter(t => !t.is_refunded);
+                let total = activeTxs.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0);
+
+                document.getElementById('session-sales-total').innerText = `${total.toLocaleString()} د.ع`;
+                document.getElementById('session-sales-count').innerText = activeTxs.length;
+
+                tbody.innerHTML = "";
+                if (myTxs.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-sub);">لا توجد حركات مسجلة</td></tr>`;
+                } else {
+                    myTxs.forEach(t => {
+                        tbody.innerHTML += `
+                            <tr style="${t.is_refunded ? 'opacity:0.4; text-decoration:line-through;' : ''}">
+                                <td><b>${t.emp_name}</b></td>
+                                <td style="color:var(--emerald); font-weight:bold;">${(parseFloat(t.amount) || 0).toLocaleString()} د.ع</td>
+                                <td>
+                                    ${t.is_refunded ? '<span style="color:var(--rose); font-size:11px;">ملغاة</span>' : `<button class="btn-rose" onclick="refundTransaction('${t.tx_code}')">إلغاء (Void)</button>`}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch(e) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--rose);">خطأ في جلب البيانات</td></tr>`;
+            }
+        }
+    </script>
+</body>
+</html>
