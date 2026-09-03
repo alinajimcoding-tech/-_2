@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>بوابة التاجر المعتمد | نقاط البيع POS</title>
+    <title>بوابة التاجر المعتمد | نقاط البيع POS الآمنة</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
@@ -70,7 +70,7 @@
 <body>
 
     <div class="navbar">
-        <div style="font-weight: 900; font-size: 15px;">منظومة المقاصة ونقاط البيع | بوابة التاجر المعتمد</div>
+        <div style="font-weight: 900; font-size: 15px;">منظومة التقسيط ونقاط البيع | بوابة التاجر المعتمد (الآمنة)</div>
         <div style="display: flex; gap: 8px; align-items: center;">
             <div id="store-badge" class="hidden" style="background: var(--surface-card); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); color: var(--primary);"></div>
             <button id="btn-z-report" class="btn-secondary hidden" style="padding: 5px 12px; font-size: 11px; border-radius: 8px; cursor: pointer;" onclick="openZReport()">تقرير الإغلاق Z-Report</button>
@@ -80,8 +80,8 @@
     <!-- واجهة البداية للتاجر -->
     <div id="merchant-landing">
         <div class="hero-banner">
-            <h1>منصة الربط التجاري ونقاط البيع</h1>
-            <p>انضم لشبكة المتاجر المعتمدة لدى اتحاد الغرف التجارية، واستقبل مشتريات الموظفين عبر الـ QR Code مع تسوية بنكية منتظمة.</p>
+            <h1>منصة الربط التجاري ونقاط بيع الأقساط</h1>
+            <p>انضم لشبكة المتاجر المعتمدة لدى اتحاد الغرف التجارية، واستقبل مشتريات الأقساط الخاصة بالموطنين عبر الـ QR Code المشفر مع تسوية بنكية منتظمة.</p>
             
             <div class="feature-grid">
                 <div class="feature-item">
@@ -90,11 +90,11 @@
                 </div>
                 <div class="feature-item">
                     <h4>أمان ومطابقة بيومترية</h4>
-                    <p>فحص هوية الموظف وصورته والرمز الديناميكي لمنع أي احتيال.</p>
+                    <p>فحص هوية الموظف وصورته والرمز الديناميكي الفريد لمنع أي احتيال أو تكرار.</p>
                 </div>
                 <div class="feature-item">
-                    <h4>زيادة القوة الشرائية</h4>
-                    <p>استقطاب موظفي الدولة بفضل السقف الائتماني المتاح للشراء الفوري.</p>
+                    <h4>تعزيز القوة الشرائية للأقساط</h4>
+                    <p>استقطاب موظفي الدولة بفضل سقف التقساط المتاح (50% من صافي الراتب).</p>
                 </div>
             </div>
 
@@ -108,7 +108,7 @@
     <!-- تسجيل الدخول -->
     <div id="merchant-login-box" class="box hidden">
         <h2 style="font-size: 18px; margin-bottom: 6px; text-align: center;">تسجيل دخول نقطة البيع</h2>
-        <p style="font-size: 12px; color: var(--text-sub); text-align: center; margin-bottom: 18px;">أدخل اسم المنشأة وكلمة المرور لبدء الجلسة</p>
+        <p style="font-size: 12px; color: var(--text-sub); text-align: center; margin-bottom: 18px;">أدخل اسم المنشأة وكلمة المرور لبدء جلسة التقسيط</p>
 
         <div class="input-group">
             <label>اسم السوبرماركت / المنشأة:</label>
@@ -125,7 +125,7 @@
 
     <!-- إنشاء حساب تاجر -->
     <div id="merchant-reg-box" class="box hidden">
-        <h2 style="font-size: 18px; margin-bottom: 6px; text-align: center;">تسجيل منشأة تجارية جديدة</h2>
+        <h2 style="font-size: 18px; margin-bottom: 6px; text-align: center;">تسجيل منشأة تجارية جديدة للتقسيط</h2>
         <p style="font-size: 12px; color: var(--text-sub); text-align: center; margin-bottom: 18px;">تسجيل البيانات الرسمية لاعتماد المتجر بنقاط البيع</p>
 
         <div class="input-group">
@@ -134,7 +134,7 @@
         </div>
         <div class="input-group">
             <label>رقم هاتف المنشأة / الإدارة:</label>
-            <input type="text" id="reg-store-phone" class="input-ctrl" placeholder="07XXXXXXXXX">
+            <input type="text" id="reg-store-phone" class="input-ctrl" placeholder="07XXXXXXXXX" maxlength="11">
         </div>
         <div class="input-group">
             <label>عنوان المنشأة بالتفصيل:</label>
@@ -145,7 +145,7 @@
             <input type="text" id="reg-store-products" class="input-ctrl" placeholder="مواد غذائية، أجهزة منزلية، ملابس...">
         </div>
         <div class="input-group">
-            <label>كلمة المرور للحساب:</label>
+            <label>كلمة المرور للحساب (6 خانات على الأقل):</label>
             <input type="password" id="reg-store-pass" class="input-ctrl" placeholder="كلمة المرور">
         </div>
 
@@ -157,7 +157,7 @@
     <div id="merchant-dash" class="hidden" style="max-width: 900px; margin: 0 auto; width: 100%;">
         <div class="kpi-row">
             <div class="kpi-cell">
-                <span style="font-size: 11px; color: var(--text-sub); display: block;">مبيعات الجلسة الحالية</span>
+                <span style="font-size: 11px; color: var(--text-sub); display: block;">مبيعات التقسيط الحالية</span>
                 <b id="session-sales-total" style="color: var(--emerald); font-size: 18px;">0 د.ع</b>
             </div>
             <div class="kpi-cell">
@@ -168,7 +168,7 @@
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div class="box" style="margin: 0;">
-                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">ماسح كود الزبون (QR)</h3>
+                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">ماسح كود الزبون الآمن (QR)</h3>
                 <div id="pos-reader" style="border-radius: 10px; overflow: hidden; margin-bottom: 12px;"></div>
                 <button class="btn btn-secondary" onclick="restartScanner()">إعادة تشغيل الماسح</button>
 
@@ -181,12 +181,12 @@
                         </div>
                     </div>
                     <div style="background: rgba(16, 185, 129, 0.1); padding: 8px; border-radius: 8px; margin-bottom: 10px; text-align: center;">
-                        <span style="font-size: 11px; color: var(--emerald);">الرصيد المتاح: </span>
+                        <span style="font-size: 11px; color: var(--emerald);">رصيد التقسيط المتاح: </span>
                         <b id="pos-emp-bal" style="color: var(--emerald); font-size: 15px;">-</b>
                     </div>
 
                     <div class="input-group">
-                        <label>مبلغ الفاتورة (د.ع):</label>
+                        <label>مبلغ قسط الفاتورة (د.ع):</label>
                         <input type="number" id="pos-bill" class="input-ctrl" placeholder="المبلغ" oninput="calculateLiveFee()">
                     </div>
 
@@ -196,20 +196,20 @@
                     </div>
 
                     <div class="input-group">
-                        <label>رمز الأمان اللحظي الظاهر على هاتف الزبون (OTP):</label>
-                        <input type="number" id="pos-otp" class="input-ctrl" placeholder="3 أرقام">
+                        <label>رمز الأمان اللحظي المتجدد (OTP) الظاهر على هاتف الزبون:</label>
+                        <input type="number" id="pos-otp" class="input-ctrl" placeholder="3 أو 4 أرقام">
                     </div>
 
                     <div class="input-group">
                         <label>رمز PIN السري للموظف:</label>
                         <input type="password" id="pos-pin" maxlength="4" class="input-ctrl" placeholder="****">
                     </div>
-                    <button class="btn btn-emerald" id="btn-exec-trans" onclick="executeTransaction()">تأكيد وخصم الفاتورة</button>
+                    <button class="btn btn-emerald" id="btn-exec-trans" onclick="executeTransaction()">تأكيد وخصم قسط الفاتورة</button>
                 </div>
             </div>
 
             <div class="box" style="margin: 0;">
-                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">سجل فواتير المنشأة</h3>
+                <h3 style="font-size: 15px; margin-bottom: 12px; font-weight: 800;">سجل فواتير التقسيط للمنشأة</h3>
                 <table>
                     <thead>
                         <tr>
@@ -228,7 +228,7 @@
     <div id="receipt-modal" class="modal-overlay hidden">
         <div class="receipt-card">
             <div style="font-size: 13px; font-weight: 900; margin-bottom: 2px;">اتحاد الغرف التجارية العراقية</div>
-            <div style="font-size: 10px; color: #64748b;">إشعار تسوية وخصم إلكتروني معتمد</div>
+            <div style="font-size: 10px; color: #64748b;">إشعار تسوية وخصم أقساط إلكتروني معتمد</div>
             <div class="receipt-line"></div>
             
             <div class="receipt-row"><span>رقم المعاملة:</span><b id="rcpt-id">-</b></div>
@@ -238,12 +238,12 @@
             
             <div class="receipt-line"></div>
             <div class="receipt-row" style="font-size: 14px; font-weight: 900; color: #047857;">
-                <span>المبلغ الإجمالي:</span>
+                <span>مبلغ القسط الإجمالي:</span>
                 <span id="rcpt-amount">-</span>
             </div>
             <div class="receipt-line"></div>
             
-            <div style="font-size: 9px; color: #64748b; margin-bottom: 12px;">تم اعتماد الخصم ومزامنته مع نظام المقاصة المركزية</div>
+            <div style="font-size: 9px; color: #64748b; margin-bottom: 12px;">تم اعتماد خصم الأقساط ومزامنته مع نظام المقاصة المركزية</div>
             <button class="btn btn-primary" onclick="closeReceipt()">إتمام وطباعة</button>
         </div>
     </div>
@@ -251,12 +251,12 @@
     <!-- نافذة تقرير الإغلاق اليومي Z-Report -->
     <div id="z-report-modal" class="modal-overlay hidden">
         <div class="receipt-card" style="width: 380px;">
-            <div style="font-size: 14px; font-weight: 900;">تقرير الإغلاق اليومي (Z-Report)</div>
+            <div style="font-size: 14px; font-weight: 900;">تقرير الإغلاق اليومي للتقسيط (Z-Report)</div>
             <div style="font-size: 10px; color: #64748b;" id="z-store-title">-</div>
             <div class="receipt-line"></div>
             
             <div class="receipt-row"><span>إجمالي عدد العمليات:</span><b id="z-count">0</b></div>
-            <div class="receipt-row"><span>إجمالي المبيعات:</span><b id="z-gross">0 د.ع</b></div>
+            <div class="receipt-row"><span>إجمالي مبيعات التقسيط:</span><b id="z-gross">0 د.ع</b></div>
             <div class="receipt-row"><span>إجمالي استقطاع الاتحاد (3%):</span><b id="z-fee" style="color:#e11d48;">0 د.ع</b></div>
             
             <div class="receipt-line"></div>
@@ -288,6 +288,19 @@
                 console.warn("Supabase initialization error:", e);
             }
             return supabaseClient;
+        }
+
+        // دالة تشفير SHA-256 للمطابقة الأمنية لرمز الـ PIN
+        async function hashPin(pin) {
+            const msgBuffer = new TextEncoder().encode(pin);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        function sanitizeInput(str) {
+            if (!str) return "";
+            return str.replace(/[<>]/g, "").trim();
         }
 
         let curStore = null;
@@ -340,19 +353,25 @@
         }
 
         async function handleMerchantRegister() {
-            const name = document.getElementById('reg-store-name').value.trim();
-            const phone = document.getElementById('reg-store-phone').value.trim();
-            const addr = document.getElementById('reg-store-addr').value.trim();
-            const prods = document.getElementById('reg-store-products').value.trim();
-            const pass = document.getElementById('reg-store-pass').value.trim();
+            const name = sanitizeInput(document.getElementById('reg-store-name').value);
+            const phone = sanitizeInput(document.getElementById('reg-store-phone').value);
+            const addr = sanitizeInput(document.getElementById('reg-store-addr').value);
+            const prods = sanitizeInput(document.getElementById('reg-store-products').value);
+            const pass = document.getElementById('reg-store-pass').value;
 
             if (!name || !pass) {
                 showToast("يرجى كتابة اسم المنشأة وكلمة المرور", "error");
                 return;
             }
 
+            if (pass.length < 6) {
+                showToast("كلمة المرور يجب ألا تقل عن 6 خانات لأسباب أمنية", "error");
+                return;
+            }
+
             const sb = getSupabase();
             try {
+                const hashedPass = await hashPin(pass);
                 if (sb) {
                     const { data: existing } = await sb.from('stores').select('id').eq('name', name).maybeSingle();
                     if (existing) {
@@ -365,13 +384,13 @@
                         phone: phone,
                         address: addr,
                         products: prods,
-                        password: pass
+                        password: hashedPass
                     }]);
 
                     if (error) throw error;
                 }
 
-                showToast("تم تسجيل منشأتك بنجاح، تفضل بالدخول", "success");
+                showToast("تم تسجيل منشأتك الآمنة بنجاح، تفضل بالدخول", "success");
                 showMerchantSection('login');
             } catch(e) {
                 showToast(`خطأ: ${e.message}`, "error");
@@ -379,8 +398,8 @@
         }
 
         async function handleMerchantLogin() {
-            const name = document.getElementById('login-store-name').value.trim();
-            const pass = document.getElementById('login-store-pass').value.trim();
+            const name = sanitizeInput(document.getElementById('login-store-name').value);
+            const pass = document.getElementById('login-store-pass').value;
 
             if (!name || !pass) {
                 showToast("أدخل اسم المنشأة وكلمة المرور", "error");
@@ -389,8 +408,9 @@
 
             const sb = getSupabase();
             try {
+                const hashedPass = await hashPin(pass);
                 if (sb) {
-                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', pass).maybeSingle();
+                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', hashedPass).maybeSingle();
                     if (error || !store) {
                         showToast("اسم المنشأة أو كلمة المرور غير صحيحة", "error");
                         return;
@@ -400,13 +420,13 @@
                     curStore = { name, pass };
                 }
 
-                document.getElementById('store-badge').innerText = `منشأة معتمدة: ${curStore.name}`;
+                document.getElementById('store-badge').innerText = `منشأة معتمدة للتقسيط: ${curStore.name}`;
                 document.getElementById('store-badge').classList.remove('hidden');
                 document.getElementById('btn-z-report').classList.remove('hidden');
                 showMerchantSection('dash');
                 startScanner();
                 renderTxTable();
-                showToast(`جلسة بيع نشطة: ${curStore.name}`, "success");
+                showToast(`جلسة تقسيط نشطة وآمنة: ${curStore.name}`, "success");
             } catch(e) {
                 showToast("فشل تسجيل الدخول", "error");
             }
@@ -418,7 +438,11 @@
             posScanner.render(async (decodedText) => {
                 try {
                     let parsed;
-                    try { parsed = JSON.parse(decodeURIComponent(decodedText)); } catch(e) { parsed = JSON.parse(decodedText); }
+                    try { 
+                        parsed = JSON.parse(decodeURIComponent(decodedText)); 
+                    } catch(e) { 
+                        parsed = JSON.parse(decodedText); 
+                    }
                     
                     const sb = getSupabase();
                     let emp = null;
@@ -429,7 +453,7 @@
 
                     if (!emp || emp.status !== 'approved') { 
                         playTone(200, 'sawtooth', 0.3);
-                        showToast("البطاقة غير معتمدة من قبل إدارة الاتحاد", "error");
+                        showToast("البطاقة الرقمية غير معتمدة من قبل إدارة الاتحاد", "error");
                         return; 
                     }
                     if (emp.is_frozen) { 
@@ -446,9 +470,9 @@
                     document.getElementById('pos-emp-bal').innerText = `${(parseFloat(emp.balance) || 0).toLocaleString()} د.ع`;
                     
                     document.getElementById('pos-emp-pic').src = emp.kyc_photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E";
-                    showToast("تمت مطابقة بطاقة الموظف بنجاح", "success");
+                    showToast("تم التحقق من هوية المواطن وسقف الأقساط بنجاح", "success");
                 } catch(e) {
-                    showToast("رمز QR غير مطابق", "error");
+                    showToast("رمز QR غير صالح أو غير مطابق للنظام", "error");
                 }
             });
         }
@@ -464,12 +488,13 @@
             const enteredOtp = document.getElementById('pos-otp').value.trim();
             const btn = document.getElementById('btn-exec-trans');
 
-            if (!bill || bill <= 0) { showToast("يرجى إدخال مبلغ صحيح", "error"); return; }
+            if (!bill || bill <= 0) { showToast("يرجى إدخال مبلغ قسط صحيح", "error"); return; }
+            if (!pin || pin.length !== 4) { showToast("يرجى إدخال رمز PIN السري المكون من 4 أرقام", "error"); return; }
 
             const sb = getSupabase();
             try {
                 btn.disabled = true;
-                btn.innerText = "جاري تنفيذ العملية...";
+                btn.innerText = "جاري التحقق وتنفيذ عملية التقسيط...";
 
                 let emp = null;
                 if (sb) {
@@ -480,30 +505,33 @@
                 }
 
                 if (!emp || emp.status !== 'approved' || emp.is_frozen) {
-                    showToast("البطاقة غير صالحة أو مجمدة", "error");
+                    showToast("البطاقة غير صالحة أو مجمدة أمنياً", "error");
                     return;
                 }
 
+                // التحقق من مطابقة رمز OTP اللحظي المتجدد
                 if (emp.current_otp && String(enteredOtp) !== String(emp.current_otp)) {
                     playTone(180, 'sawtooth', 0.3);
-                    showToast("رمز الأمان اللحظي (OTP) غير مطابق!", "error");
+                    showToast("رمز الأمان اللحظي (OTP) غير مطابق أو منتهي الصلاحية!", "error");
                     return;
                 }
 
-                if (pin !== String(emp.pin)) { 
+                // مقارنة الـ PIN المشفر (SHA-256)
+                const hashedEnteredPin = await hashPin(pin);
+                if (hashedEnteredPin !== String(emp.pin)) { 
                     playTone(180, 'sawtooth', 0.3);
-                    showToast("رمز PIN السري غير مطابق", "error"); 
+                    showToast("رمز PIN السري للموظف غير مطابق", "error"); 
                     return; 
                 }
 
                 const currentBal = parseFloat(emp.balance) || 0;
                 if (bill > currentBal) { 
-                    showToast("رصيد الموظف المتبقي لا يكفي", "error"); 
+                    showToast("مبلغ القسط يتجاوز سقف التقساط المتبقي للموظف!", "error"); 
                     return; 
                 }
 
                 const newBalance = currentBal - bill;
-                const txCode = "TX-" + Date.now().toString().slice(-6);
+                const txCode = "INST-" + Date.now().toString().slice(-6);
                 const dateStr = new Date().toLocaleString('ar-EG');
 
                 if (sb) {
@@ -541,15 +569,15 @@
                 renderTxTable();
                 startScanner();
             } catch(e) {
-                showToast(`فشلت العملية: ${e.message}`, "error");
+                showToast(`فشلت عملية التقسيط: ${e.message}`, "error");
             } finally {
                 btn.disabled = false;
-                btn.innerText = "تأكيد وخصم الفاتورة";
+                btn.innerText = "تأكيد وخصم قسط الفاتورة";
             }
         }
 
         async function refundTransaction(txCode) {
-            if (!confirm("هل تريد بالتأكيد إلغاء العملية واسترجاع الرصيد للموظف؟")) return;
+            if (!confirm("هل تريد بالتأكيد إلغاء عملية التقسيط واسترجاع السقف للموظف؟")) return;
 
             const sb = getSupabase();
             try {
@@ -566,7 +594,7 @@
                     await sb.from('transactions').update({ is_refunded: true }).eq('tx_code', txCode);
                 }
 
-                showToast("تم إلغاء الفاتورة واسترجاع الرصيد للموظف بنجاح", "success");
+                showToast("تم إلغاء عملية التقسيط واسترجاع السقف للموظف بنجاح", "success");
                 renderTxTable();
             } catch(e) {
                 showToast(`تعذر الإلغاء: ${e.message}`, "error");
@@ -575,7 +603,7 @@
 
         function closeReceipt() {
             document.getElementById('receipt-modal').classList.add('hidden');
-            showToast("تم توثيق الفاتورة بالمقاصة بنجاح", "success");
+            showToast("تم توثيق قسط التقسيط بالمقاصة بنجاح", "success");
         }
 
         async function openZReport() {
@@ -624,12 +652,12 @@
 
                 tbody.innerHTML = "";
                 if (myTxs.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-sub);">لا توجد حركات مسجلة</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-sub);">لا توجد حركات تقسيط مسجلة</td></tr>`;
                 } else {
                     myTxs.forEach(t => {
                         tbody.innerHTML += `
                             <tr style="${t.is_refunded ? 'opacity:0.4; text-decoration:line-through;' : ''}">
-                                <td><b>${t.emp_name}</b></td>
+                                <td><b>${sanitizeInput(t.emp_name)}</b></td>
                                 <td style="color:var(--emerald); font-weight:bold;">${(parseFloat(t.amount) || 0).toLocaleString()} د.ع</td>
                                 <td>
                                     ${t.is_refunded ? '<span style="color:var(--rose); font-size:11px;">ملغاة</span>' : `<button class="btn-rose" onclick="refundTransaction('${t.tx_code}')">إلغاء (Void)</button>`}
