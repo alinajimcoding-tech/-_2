@@ -381,8 +381,7 @@
             document.getElementById('fee-union').innerText = `${fee.toLocaleString()} د.ع`;
             document.getElementById('fee-net').innerText = `${net.toLocaleString()} د.ع`;
         }
-
-   async function handleMerchantRegister() {
+async function handleMerchantRegister() {
             const name = sanitizeInput(document.getElementById('reg-store-name').value);
             const phone = sanitizeInput(document.getElementById('reg-store-phone').value);
             const addr = sanitizeInput(document.getElementById('reg-store-addr').value);
@@ -403,16 +402,7 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    // فحص التكرار حصراً ضمن جدول المتاجر (stores) بناءً على اسم المنشأة أو هاتف المتجر
-                    // هذا يسمح لنفس رقم الهاتف بأن يكون مواطناً وفي نفس الوقت تاجراً بشكل منفصل تماماً
-                    const { data: existingStore, error: checkError } = await sb.from('stores').select('id').or(`name.eq.${name},phone.eq.${phone}`).maybeSingle();
-                    
-                    if (existingStore) {
-                        showToast("اسم المنشأة أو رقم هاتف المتجر مسجل مسبقاً كنقطة بيع", "error");
-                        return;
-                    }
-
-                    // إدخال الحساب في جدول المتاجر (stores) حصراً
+                    // محاولة الإدخال المباشر في جدول المتاجر (stores) حصراً بشكل مستقل
                     const { error: insertError } = await sb.from('stores').insert([{
                         name: name,
                         phone: phone,
@@ -421,7 +411,14 @@
                         password: hashedPass
                     }]);
 
-                    if (insertError) throw insertError;
+                    if (insertError) {
+                        // إذا كان الخطأ بسبب تكرار الاسم صراحةً
+                        if (insertError.code === '23505') {
+                            showToast("اسم المنشأة أو رقم الهاتف مسجل مسبقاً كنقطة بيع", "error");
+                            return;
+                        }
+                        throw insertError;
+                    }
 
                     await sb.from('audit_logs').insert([{
                         action_type: 'REGISTER_STORE',
@@ -434,75 +431,6 @@
                 showMerchantSection('login');
             } catch(e) {
                 showToast(`خطأ في التسجيل: ${e.message}`, "error");
-            }
-        }
-
-        async function handleMerchantLogin() {
-            const now = Date.now();
-            if (now < lockoutUntil) {
-                const remainingSec = Math.ceil((lockoutUntil - now) / 1000);
-                showToast(`تم حظر المحاولات مؤقتاً. يرجى الانتظار ${remainingSec} ثانية.`, "error");
-                return;
-            }
-
-            const name = sanitizeInput(document.getElementById('login-store-name').value);
-            const pass = document.getElementById('login-store-pass').value;
-
-            if (!name || !pass) {
-                showToast("أدخل اسم المنشأة وكلمة المرور", "error");
-                return;
-            }
-
-            const sb = getSupabase();
-            try {
-                const hashedPass = await hashPin(pass);
-                if (sb) {
-                    // الاستعلام وتسجيل الدخول يتم حصراً من جدول المتاجر (stores)
-                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', hashedPass).maybeSingle();
-                    
-                    if (error || !store) {
-                        loginAttempts++;
-                        if (loginAttempts >= 3) {
-                            lockoutUntil = Date.now() + 30000;
-                            loginAttempts = 0;
-                            showToast("تم إدخال بيانات خاطئة 3 مرات. تم حظر الدخول مؤقتاً لمدة 30 ثانية.", "error");
-                        } else {
-                            showToast(`اسم المنشأة أو كلمة المرور غير صحيحة. المحاولة ${loginAttempts} من 3`, "error");
-                        }
-                        
-                        await sb.from('audit_logs').insert([{
-                            action_type: 'FAILED_MERCHANT_LOGIN',
-                            description: `محاولة دخول فاشلة لمنشأة: ${name}`,
-                            created_at: new Date().toISOString()
-                        }]).catch(()=>{});
-                        return;
-                    }
-
-                    loginAttempts = 0;
-                    lockoutUntil = 0;
-                    curStore = store;
-
-                    await sb.from('audit_logs').insert([{
-                        action_type: 'SUCCESSFUL_MERCHANT_LOGIN',
-                        description: `تم تسجيل دخول المنشأة: ${store.name} بنجاح`,
-                        created_at: new Date().toISOString()
-                    }]).catch(()=>{});
-
-                } else {
-                    loginAttempts = 0;
-                    lockoutUntil = 0;
-                    curStore = { name, pass };
-                }
-
-                document.getElementById('store-badge').innerText = `منشأة معتمدة: ${curStore.name}`;
-                document.getElementById('store-badge').classList.remove('hidden');
-                document.getElementById('btn-z-report').classList.remove('hidden');
-                showMerchantSection('dash');
-                startScanner();
-                renderTxTable();
-                showToast(`جلسة تقسيط نشطة وآمنة: ${curStore.name}`, "success");
-            } catch(e) {
-                showToast("فشل تسجيل الدخول", "error");
             }
         }
         function startScanner() {
