@@ -403,7 +403,6 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    // التحقق حصراً من جدول المتاجر (stores) لمنع تكرار اسم المنشأة، مع السماح باستقلال الحساب عن المواطنين
                     const { data: existingStore } = await sb.from('stores').select('id').eq('name', name).maybeSingle();
                     if (existingStore) {
                         showToast("اسم المنشأة التجاري مسجل مسبقاً كنقطة بيع", "error");
@@ -446,7 +445,7 @@
                 return;
             }
 
-            const name = sanitizeInput(document.getElementById('login-store-name').value);
+            const name = sanitizeInput(document.getElementById('login-store-name').value).trim();
             const pass = document.getElementById('login-store-pass').value;
 
             if (!name || !pass) {
@@ -458,8 +457,17 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', hashedPass).maybeSingle();
-                    if (error || !store) {
+                    // جلب جميع المتاجر ومطابقتها بمرونة تامة لتلافي أي مشاكل في التشفير أو التنسيق
+                    const { data: storesList, error: fetchErr } = await sb.from('stores').select('*');
+                    
+                    if (fetchErr) {
+                        showToast("خطأ في الاتصال بقاعدة البيانات", "error");
+                        return;
+                    }
+
+                    const store = storesList ? storesList.find(s => s.name.trim() === name && s.password === hashedPass) : null;
+
+                    if (!store) {
                         loginAttempts++;
                         if (loginAttempts >= 3) {
                             lockoutUntil = Date.now() + 30000;
@@ -505,7 +513,7 @@
                 renderTxTable();
                 showToast(`جلسة تقسيط نشطة وآمنة: ${curStore.name}`, "success");
             } catch(e) {
-                showToast("فشل تسجيل الدخول", "error");
+                showToast(`فشل تسجيل الدخول: ${e.message}`, "error");
             }
         }
 
