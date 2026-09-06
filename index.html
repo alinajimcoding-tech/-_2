@@ -382,15 +382,15 @@
             document.getElementById('fee-net').innerText = `${net.toLocaleString()} د.ع`;
         }
 
-        async function handleMerchantRegister() {
+   async function handleMerchantRegister() {
             const name = sanitizeInput(document.getElementById('reg-store-name').value);
             const phone = sanitizeInput(document.getElementById('reg-store-phone').value);
             const addr = sanitizeInput(document.getElementById('reg-store-addr').value);
             const prods = sanitizeInput(document.getElementById('reg-store-products').value);
             const pass = document.getElementById('reg-store-pass').value;
 
-            if (!name || !pass) {
-                showToast("يرجى كتابة اسم المنشأة وكلمة المرور", "error");
+            if (!name || !pass || !phone) {
+                showToast("يرجى ملء اسم المنشأة، الهاتف، وكلمة المرور", "error");
                 return;
             }
 
@@ -403,12 +403,16 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    const { data: existing, error: checkError } = await sb.from('stores').select('id').eq('name', name).maybeSingle();
-                    if (existing) {
-                        showToast("اسم المنشأة التجاري مسجل مسبقاً", "error");
+                    // فحص التكرار حصراً ضمن جدول المتاجر (stores) بناءً على اسم المنشأة أو هاتف المتجر
+                    // هذا يسمح لنفس رقم الهاتف بأن يكون مواطناً وفي نفس الوقت تاجراً بشكل منفصل تماماً
+                    const { data: existingStore, error: checkError } = await sb.from('stores').select('id').or(`name.eq.${name},phone.eq.${phone}`).maybeSingle();
+                    
+                    if (existingStore) {
+                        showToast("اسم المنشأة أو رقم هاتف المتجر مسجل مسبقاً كنقطة بيع", "error");
                         return;
                     }
 
+                    // إدخال الحساب في جدول المتاجر (stores) حصراً
                     const { error: insertError } = await sb.from('stores').insert([{
                         name: name,
                         phone: phone,
@@ -421,12 +425,12 @@
 
                     await sb.from('audit_logs').insert([{
                         action_type: 'REGISTER_STORE',
-                        description: `تم تسجيل منشأة تجارية جديدة: ${name}`,
+                        description: `تم تسجيل منشأة تجارية جديدة مستقلة: ${name}`,
                         created_at: new Date().toISOString()
                     }]).catch(()=>{});
                 }
 
-                showToast("تم تسجيل منشأتك التجارية بنجاح، تفضل بالدخول", "success");
+                showToast("تم إنشاء حساب التاجر المستقل بنجاح، تفضل بالدخول", "success");
                 showMerchantSection('login');
             } catch(e) {
                 showToast(`خطأ في التسجيل: ${e.message}`, "error");
@@ -453,7 +457,9 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
+                    // الاستعلام وتسجيل الدخول يتم حصراً من جدول المتاجر (stores)
                     const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', hashedPass).maybeSingle();
+                    
                     if (error || !store) {
                         loginAttempts++;
                         if (loginAttempts >= 3) {
@@ -499,7 +505,6 @@
                 showToast("فشل تسجيل الدخول", "error");
             }
         }
-
         function startScanner() {
             if (posScanner) { try { posScanner.clear(); } catch(e){} }
             try {
