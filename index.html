@@ -381,7 +381,8 @@
             document.getElementById('fee-union').innerText = `${fee.toLocaleString()} د.ع`;
             document.getElementById('fee-net').innerText = `${net.toLocaleString()} د.ع`;
         }
-async function handleMerchantRegister() {
+
+        async function handleMerchantRegister() {
             const name = sanitizeInput(document.getElementById('reg-store-name').value);
             const phone = sanitizeInput(document.getElementById('reg-store-phone').value);
             const addr = sanitizeInput(document.getElementById('reg-store-addr').value);
@@ -402,7 +403,13 @@ async function handleMerchantRegister() {
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    // محاولة الإدخال المباشر في جدول المتاجر (stores) حصراً بشكل مستقل
+                    // التحقق حصراً من جدول المتاجر (stores) لمنع تكرار اسم المنشأة، مع السماح باستقلال الحساب عن المواطنين
+                    const { data: existingStore } = await sb.from('stores').select('id').eq('name', name).maybeSingle();
+                    if (existingStore) {
+                        showToast("اسم المنشأة التجاري مسجل مسبقاً كنقطة بيع", "error");
+                        return;
+                    }
+
                     const { error: insertError } = await sb.from('stores').insert([{
                         name: name,
                         phone: phone,
@@ -411,20 +418,17 @@ async function handleMerchantRegister() {
                         password: hashedPass
                     }]);
 
-                    if (insertError) {
-                        // إذا كان الخطأ بسبب تكرار الاسم صراحةً
-                        if (insertError.code === '23505') {
-                            showToast("اسم المنشأة أو رقم الهاتف مسجل مسبقاً كنقطة بيع", "error");
-                            return;
-                        }
-                        throw insertError;
-                    }
+                    if (insertError) throw insertError;
 
-                    await sb.from('audit_logs').insert([{
-                        action_type: 'REGISTER_STORE',
-                        description: `تم تسجيل منشأة تجارية جديدة مستقلة: ${name}`,
-                        created_at: new Date().toISOString()
-                    }]).catch(()=>{});
+                    try {
+                        await sb.from('audit_logs').insert([{
+                            action_type: 'REGISTER_STORE',
+                            description: `تم تسجيل منشأة تجارية جديدة: ${name}`,
+                            created_at: new Date().toISOString()
+                        }]);
+                    } catch(logErr) {
+                        console.warn("Audit log notice:", logErr);
+                    }
                 }
 
                 showToast("تم إنشاء حساب التاجر المستقل بنجاح، تفضل بالدخول", "success");
@@ -433,6 +437,78 @@ async function handleMerchantRegister() {
                 showToast(`خطأ في التسجيل: ${e.message}`, "error");
             }
         }
+
+        async function handleMerchantLogin() {
+            const now = Date.now();
+            if (now < lockoutUntil) {
+                const remainingSec = Math.ceil((lockoutUntil - now) / 1000);
+                showToast(`تم حظر المحاولات مؤقتاً. يرجى الانتظار ${remainingSec} ثانية.`, "error");
+                return;
+            }
+
+            const name = sanitizeInput(document.getElementById('login-store-name').value);
+            const pass = document.getElementById('login-store-pass').value;
+
+            if (!name || !pass) {
+                showToast("أدخل اسم المنشأة وكلمة المرور", "error");
+                return;
+            }
+
+            const sb = getSupabase();
+            try {
+                const hashedPass = await hashPin(pass);
+                if (sb) {
+                    const { data: store, error } = await sb.from('stores').select('*').eq('name', name).eq('password', hashedPass).maybeSingle();
+                    if (error || !store) {
+                        loginAttempts++;
+                        if (loginAttempts >= 3) {
+                            lockoutUntil = Date.now() + 30000;
+                            loginAttempts = 0;
+                            showToast("تم إدخال بيانات خاطئة 3 مرات. تم حظر الدخول مؤقتاً لمدة 30 ثانية.", "error");
+                        } else {
+                            showToast(`اسم المنشأة أو كلمة المرور غير صحيحة. المحاولة ${loginAttempts} من 3`, "error");
+                        }
+                        
+                        try {
+                            await sb.from('audit_logs').insert([{
+                                action_type: 'FAILED_MERCHANT_LOGIN',
+                                description: `محاولة دخول فاشلة لمنشأة: ${name}`,
+                                created_at: new Date().toISOString()
+                            }]);
+                        } catch(e){}
+                        return;
+                    }
+
+                    loginAttempts = 0;
+                    lockoutUntil = 0;
+                    curStore = store;
+
+                    try {
+                        await sb.from('audit_logs').insert([{
+                            action_type: 'SUCCESSFUL_MERCHANT_LOGIN',
+                            description: `تم تسجيل دخول المنشأة: ${store.name} بنجاح`,
+                            created_at: new Date().toISOString()
+                        }]);
+                    } catch(e){}
+
+                } else {
+                    loginAttempts = 0;
+                    lockoutUntil = 0;
+                    curStore = { name, pass };
+                }
+
+                document.getElementById('store-badge').innerText = `منشأة معتمدة: ${curStore.name}`;
+                document.getElementById('store-badge').classList.remove('hidden');
+                document.getElementById('btn-z-report').classList.remove('hidden');
+                showMerchantSection('dash');
+                startScanner();
+                renderTxTable();
+                showToast(`جلسة تقسيط نشطة وآمنة: ${curStore.name}`, "success");
+            } catch(e) {
+                showToast("فشل تسجيل الدخول", "error");
+            }
+        }
+
         function startScanner() {
             if (posScanner) { try { posScanner.clear(); } catch(e){} }
             try {
@@ -549,11 +625,13 @@ async function handleMerchantRegister() {
                     }]);
                     if (txErr) throw txErr;
 
-                    await sb.from('audit_logs').insert([{
-                        action_type: 'EXECUTE_TRANSACTION',
-                        description: `تم خصم قسط بقيمة ${bill} د.ع للموظف ${emp.name} لصالح المنشأة ${curStore.name} برقم معاملة ${txCode}`,
-                        created_at: new Date().toISOString()
-                    }]).catch(()=>{});
+                    try {
+                        await sb.from('audit_logs').insert([{
+                            action_type: 'EXECUTE_TRANSACTION',
+                            description: `تم خصم قسط بقيمة ${bill} د.ع للموظف ${emp.name} لصالح المنشأة ${curStore.name} برقم معاملة ${txCode}`,
+                            created_at: new Date().toISOString()
+                        }]);
+                    } catch(e){}
                 }
 
                 playTone(587.33, 'triangle', 0.1);
@@ -600,11 +678,13 @@ async function handleMerchantRegister() {
 
                     await sb.from('transactions').update({ is_refunded: true }).eq('tx_code', txCode);
 
-                    await sb.from('audit_logs').insert([{
-                        action_type: 'VOID_TRANSACTION',
-                        description: `تم إلغاء عملية التقسيط برقم المعاملة ${txCode} واسترجاع المبلغ للموظف`,
-                        created_at: new Date().toISOString()
-                    }]).catch(()=>{});
+                    try {
+                        await sb.from('audit_logs').insert([{
+                            action_type: 'VOID_TRANSACTION',
+                            description: `تم إلغاء عملية التقسيط برقم المعاملة ${txCode} واسترجاع المبلغ للموظف`,
+                            created_at: new Date().toISOString()
+                        }]);
+                    } catch(e){}
                 }
 
                 showToast("تم إلغاء عملية التقسيط واسترجاع السقف للموظف بنجاح", "success");
