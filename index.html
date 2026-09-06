@@ -457,7 +457,6 @@
             try {
                 const hashedPass = await hashPin(pass);
                 if (sb) {
-                    // جلب جميع المتاجر ومطابقتها بمرونة تامة لتلافي أي مشاكل في التشفير أو التنسيق
                     const { data: storesList, error: fetchErr } = await sb.from('stores').select('*');
                     
                     if (fetchErr) {
@@ -616,7 +615,11 @@
                 }
 
                 const newBalance = currentBal - bill;
-                const txCode = "INST-" + Date.now().toString().slice(-6);
+                
+                // توليد رقم معاملة تصاعدي وبسيط (TR-1, TR-2, ...)
+                const { count: txCount } = await sb.from('transactions').select('*', { count: 'exact', head: true }).eq('store_name', curStore.name);
+                const txCode = `TR-${(txCount || 0) + 1}`;
+                
                 const dateStr = new Date().toLocaleString('ar-EG');
 
                 if (sb) {
