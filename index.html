@@ -78,7 +78,6 @@
 </head>
 <body>
 
-    <!-- زر المساعدة والدعم العائم عبر الواتساب للتاجر -->
     <a href="https://wa.me/9647811662140?text=مرحباً، أحتاج إلى مساعدة بخصوص بوابة التاجر ونقاط البيع (POS)" target="_blank" style="position: fixed; bottom: 24px; right: 24px; background: #25d366; color: white; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4); z-index: 9999; text-decoration: none; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="المساعدة والدعم الفوري عبر الواتساب">
         <svg viewBox="0 0 24 24" width="30" height="30" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="fill: white; stroke: none;">
             <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
@@ -121,7 +120,7 @@
         </div>
     </div>
 
-    <!-- تسجيل الدخول مع حماية Rate Limiting للتخمين -->
+    <!-- تسجيل الدخول -->
     <div id="merchant-login-box" class="box hidden">
         <h2 style="font-size: 16px; margin-bottom: 4px; text-align: center;">تسجيل دخول نقطة البيع</h2>
         <p style="font-size: 11px; color: var(--text-sub); text-align: center; margin-bottom: 16px;">أدخل اسم المنشأة وكلمة المرور لبدء جلسة التقسيط</p>
@@ -169,7 +168,7 @@
         <button class="btn btn-secondary" onclick="showMerchantSection('landing')" style="margin-top: 8px;">رجوع</button>
     </div>
 
-    <!-- لوحة تحكم الكاشير مع محرك البحث الذكي الآمن -->
+    <!-- لوحة تحكم الكاشير -->
     <div id="merchant-dash" class="hidden" style="max-width: 900px; margin: 0 auto; width: 100%;">
         <div class="kpi-row">
             <div class="kpi-cell">
@@ -269,7 +268,7 @@
         </div>
     </div>
 
-    <!-- نافذة تقرير الإغلاق اليومي Z-Report -->
+    <!-- نافذة Z-Report -->
     <div id="z-report-modal" class="modal-overlay hidden">
         <div class="receipt-card" style="max-width: 360px;">
             <div style="font-size: 13px; font-weight: 900;">تقرير الإغلاق اليومي (Z-Report)</div>
@@ -425,9 +424,7 @@
                             description: `تم تسجيل منشأة تجارية جديدة: ${name}`,
                             created_at: new Date().toISOString()
                         }]);
-                    } catch(logErr) {
-                        console.warn("Audit log notice:", logErr);
-                    }
+                    } catch(logErr) {}
                 }
 
                 showToast("تم إنشاء حساب التاجر المستقل بنجاح، تفضل بالدخول", "success");
@@ -475,29 +472,12 @@
                         } else {
                             showToast(`اسم المنشأة أو كلمة المرور غير صحيحة. المحاولة ${loginAttempts} من 3`, "error");
                         }
-                        
-                        try {
-                            await sb.from('audit_logs').insert([{
-                                action_type: 'FAILED_MERCHANT_LOGIN',
-                                description: `محاولة دخول فاشلة لمنشأة: ${name}`,
-                                created_at: new Date().toISOString()
-                            }]);
-                        } catch(e){}
                         return;
                     }
 
                     loginAttempts = 0;
                     lockoutUntil = 0;
                     curStore = store;
-
-                    try {
-                        await sb.from('audit_logs').insert([{
-                            action_type: 'SUCCESSFUL_MERCHANT_LOGIN',
-                            description: `تم تسجيل دخول المنشأة: ${store.name} بنجاح`,
-                            created_at: new Date().toISOString()
-                        }]);
-                    } catch(e){}
-
                 } else {
                     loginAttempts = 0;
                     lockoutUntil = 0;
@@ -615,11 +595,8 @@
                 }
 
                 const newBalance = currentBal - bill;
-                
-                // توليد رقم معاملة تصاعدي وبسيط (TR-1, TR-2, ...)
                 const { count: txCount } = await sb.from('transactions').select('*', { count: 'exact', head: true }).eq('store_name', curStore.name);
                 const txCode = `TR-${(txCount || 0) + 1}`;
-                
                 const dateStr = new Date().toLocaleString('ar-EG');
 
                 if (sb) {
@@ -635,14 +612,6 @@
                         is_refunded: false
                     }]);
                     if (txErr) throw txErr;
-
-                    try {
-                        await sb.from('audit_logs').insert([{
-                            action_type: 'EXECUTE_TRANSACTION',
-                            description: `تم خصم قسط بقيمة ${bill} د.ع للموظف ${emp.name} لصالح المنشأة ${curStore.name} برقم معاملة ${txCode}`,
-                            created_at: new Date().toISOString()
-                        }]);
-                    } catch(e){}
                 }
 
                 playTone(587.33, 'triangle', 0.1);
@@ -674,7 +643,6 @@
 
         async function refundTransaction(txCode) {
             if (!confirm("هل تريد بالتأكيد إلغاء عملية التقسيط واسترجاع السقف للموظف؟")) return;
-
             const sb = getSupabase();
             try {
                 if (sb) {
@@ -686,18 +654,8 @@
                         const restoredBalance = (parseFloat(emp.balance) || 0) + parseFloat(tx.amount);
                         await sb.from('requests').update({ balance: restoredBalance }).eq('id', tx.request_id);
                     }
-
                     await sb.from('transactions').update({ is_refunded: true }).eq('tx_code', txCode);
-
-                    try {
-                        await sb.from('audit_logs').insert([{
-                            action_type: 'VOID_TRANSACTION',
-                            description: `تم إلغاء عملية التقسيط برقم المعاملة ${txCode} واسترجاع المبلغ للموظف`,
-                            created_at: new Date().toISOString()
-                        }]);
-                    } catch(e){}
                 }
-
                 showToast("تم إلغاء عملية التقسيط واسترجاع السقف للموظف بنجاح", "success");
                 renderTxTable();
             } catch(e) {
